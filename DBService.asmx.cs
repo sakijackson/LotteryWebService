@@ -17,8 +17,8 @@ namespace LotteryWebService
     // [System.Web.Script.Services.ScriptService]
     public class DBService : System.Web.Services.WebService
     {
-      public   SqlConnection SqlCon;
-        public SqlCommand SqlCmd;
+       public SqlConnection SqlCon;
+       public SqlCommand SqlCmd;
        public SqlDataReader Sqldr;
 
         public DBService()
@@ -38,8 +38,9 @@ namespace LotteryWebService
             }
             catch (Exception ex)     
             {
-               
-                return false;
+                //throw ex;
+                throw new Exception(ex.Message);
+                //return false;
             }
             
 
@@ -66,8 +67,10 @@ namespace LotteryWebService
 
             }
             catch (Exception ex)
-            {                
-                throw new SoapException("Valid User Error", SoapException.ServerFaultCode, "Verify User", ex);
+            {
+                //throw ex;
+                throw new Exception(ex.Message);
+               // throw new SoapException("Valid User Error", SoapException.ServerFaultCode, "Verify User", ex);
             }
            
 
@@ -77,21 +80,41 @@ namespace LotteryWebService
         {
             try
             {
-                SqlCmd = new SqlCommand("insert into UserInfo values('" + TicketNo + "','" + TicketPrice + "','" + PriceAmount + "','" + DisplayDate + "','" + CloseDate + "','" + DrawDate + "','" + Status + "')", SqlCon);
+                SqlCmd = new SqlCommand("insert into TicketInfo(TicketNo,TicketPrice,PriceAmount,DisplayDate,CloseDate,DrawDate,Status) values('" + TicketNo + "','" + TicketPrice + "','" + PriceAmount + "','" + Convert.ToDateTime(DisplayDate).ToString("yyy/MM/dd HH:mm:ss") + "','" + Convert.ToDateTime(CloseDate).ToString("yyy/MM/dd HH:mm:ss") + "','" + Convert.ToDateTime(DrawDate).ToString("yyy/MM/dd HH:mm:ss") + "','" + Status + "')", SqlCon);
                 SqlCon.Open();
                 SqlCmd.ExecuteNonQuery();
                 SqlCmd.Dispose();
                 SqlCon.Close();
                 return true;
             }
-            catch (Exception ex)
-            {
-                SqlCmd.Dispose();
-                SqlCon.Close();
-                return false;
+            catch(Exception ex)
+            {          
+               SqlCmd.Dispose();
+               SqlCon.Close();
+                  
+
+               // throw new SoapException("Valid User Error", SoapException.ServerFaultCode, "Verify User", ex);
+              
+               throw new Exception(ex.Message);
             }
             
 
+        }
+        [WebMethod]
+        public String GetTicketCount(string TicketNo)
+        {
+            SqlCon.Open();
+            SqlCmd = new SqlCommand("SELECT ((CASE WHEN User1 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User2 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User3 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User4 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User5 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User6 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User7 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User8 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User9 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User10 IS NULL THEN 1 ELSE 0 END)) AS Sum_Of_Null  FROM TicketInfo WHERE TicketNo='"+TicketNo+"'",SqlCon);
+            Sqldr = SqlCmd.ExecuteReader();
+            if(Sqldr.Read())
+            {
+                return Sqldr.GetValue(0).ToString();
+            }
+            else
+                {
+                return "No Ticket";
+            }
+            
         }
     }
 }
