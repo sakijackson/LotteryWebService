@@ -2,8 +2,10 @@
 using System.Web.Services;
 using System.Data.SqlClient;
 using System.Configuration;
+using System.Data;
 using System.Web.Services.Protocols;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace LotteryWebService
 {
@@ -27,30 +29,51 @@ namespace LotteryWebService
 
         }
         [WebMethod]
-        public bool InsertData(string FirstName, string LastName, string Email, string Password, string DOB, string Country, string IdType, string IdNo, string Address, string State, string City, string Code, string PhoneNumer)
+        public bool insertUserInfo(string FirstName, string LastName, string PhoneNumber, string Email, string Password, string DOB, string Country, string IdType, string IdNo, string Address, string State, string City, string Code)
         {
+            Mail mail = new Mail();
             try
             {
-                SqlCmd= new SqlCommand("insert into UserInfo values('" + FirstName + "','" + LastName + "','" + Email + "','" + Password + "','" + DOB + "','" + Country + "','" + IdType + "','" + IdNo + "','" + Address + "','" + State + "','" + City + "','" + Code + "','" + PhoneNumer + "')", SqlCon);
-                SqlCon.Open();
-                SqlCmd.ExecuteNonQuery();                
-                return true;
+                using (SqlCmd = new SqlCommand("insert into UserInfo values('" + FirstName + "','" + LastName + "','" + PhoneNumber + "','" + Email + "','" + Password + "','" + DOB + "','" + Country + "','" + IdType + "','" + IdNo + "','" + Address + "','" + State + "','" + City + "','" + Code + "')", SqlCon))
+                {
+                    SqlCon.Open();
+                    int res=SqlCmd.ExecuteNonQuery();
+                    SqlCon.Close();
+                    if (res==1)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }                    
+
+                }
+                             
             }
             catch (Exception ex)     
             {
-                //throw ex;
-                throw new Exception(ex.Message);
-                //return false;
+                if(SqlCon.State==ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    throw new Exception(ex.Message);
+                }
+                else
+                {
+                    throw new Exception(ex.Message);
+                }
+                
+                
             }
             
 
         }
         [WebMethod] 
-        public string VerifyUserLogin(string UserId, string Password)
+        public string verifyUserLogin(string UserId, string Password)
         {
             try
             {
-                SqlCmd = new SqlCommand("Select UserName From UserLogininfo where UserName='" + UserId + "' and Password='" + Password + "'", SqlCon);
+                SqlCmd = new SqlCommand("Select UserId From userLoginInfo where UserId='" + UserId + "' and Password='" + Password + "' and Status=1 ", SqlCon);
                 SqlCon.Open();
                 Sqldr = SqlCmd.ExecuteReader();
                 if (Sqldr.Read())
@@ -68,7 +91,7 @@ namespace LotteryWebService
             }
             catch (Exception ex)
             {
-                //throw ex;
+               
                 throw new Exception(ex.Message);
                // throw new SoapException("Valid User Error", SoapException.ServerFaultCode, "Verify User", ex);
             }
@@ -76,7 +99,7 @@ namespace LotteryWebService
 
         }
         [WebMethod]
-        public bool InsertTicketInfo(string TicketNo,int TicketPrice,int PriceAmount,DateTime DisplayDate,DateTime CloseDate,DateTime DrawDate,string Status)
+        public bool insertTicketInfo(string TicketNo,int TicketPrice,int PriceAmount,DateTime DisplayDate,DateTime CloseDate,DateTime DrawDate,string Status)
         {
             try
             {
@@ -101,7 +124,7 @@ namespace LotteryWebService
 
         }
         [WebMethod]
-        public String GetTicketCount(string TicketNo)
+        public String getTicketCount(string TicketNo)
         {
             SqlCon.Open();
             SqlCmd = new SqlCommand("SELECT ((CASE WHEN User1 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User2 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User3 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User4 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User5 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User6 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User7 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User8 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User9 IS NULL THEN 1 ELSE 0 END)+(CASE WHEN User10 IS NULL THEN 1 ELSE 0 END)) AS Sum_Of_Null  FROM TicketInfo WHERE TicketNo='"+TicketNo+"'",SqlCon);

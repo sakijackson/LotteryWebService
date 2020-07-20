@@ -71,12 +71,16 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DBService.asmx" />
+    <Content Include="Mail.asmx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DBService.asmx.cs">
       <DependentUpon>DBService.asmx</DependentUpon>
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Mail.asmx.cs">
+      <DependentUpon>Mail.asmx</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
