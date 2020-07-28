@@ -81,8 +81,13 @@
     </Compile>
     <Compile Include="Mail.asmx.cs">
       <DependentUpon>Mail.asmx</DependentUpon>
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TicketInfo.cs" />
+    <Compile Include="UserHistory.cs" />
+    <Compile Include="UserInfo.cs" />
+    <Compile Include="WebServiceResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

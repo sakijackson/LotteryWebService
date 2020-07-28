@@ -22,17 +22,18 @@ namespace LotteryWebService
         SqlConnection SqlCon;
         SqlCommand SqlCmd;
         SqlDataReader Sqldr;
+        WebServiceResponse wsr;
         public Mail()
         {
             SqlCon = new SqlConnection(ConfigurationManager.ConnectionStrings["LotteryDBCon"].ConnectionString);
         }
 
         [WebMethod]
-        public bool sendActivationEmail(string EmailId, string Name, string url)
+        public WebServiceResponse SendActivationEmail(string EmailId, string Name, string url,string Password)
         {
             try
             {
-              
+                wsr = new WebServiceResponse();
                 string activationCode = Guid.NewGuid().ToString();
                 using (MailMessage mm = new MailMessage("sakigokul97@gmail.com", EmailId))
                 {
@@ -54,60 +55,77 @@ namespace LotteryWebService
                     smtp.Send(mm);
                 }
 
-                using (SqlCmd = new SqlCommand("INSERT INTO UserActivation VALUES('" + EmailId + "','" + activationCode + "','0')", SqlCon))
+                using (SqlCmd = new SqlCommand("INSERT INTO UserLoginInfo VALUES('" + EmailId + "','" + Password + "','0','" + activationCode + "')", SqlCon))
                 {
                     SqlCon.Open();
-                    SqlCmd.ExecuteNonQuery();
+                    int res= SqlCmd.ExecuteNonQuery();
+                    if(res==1)
+                    {
+                        wsr.Result = "1";
+
+                    }
+                    else
+                    {
+                        wsr.Result = "0";
+                    }
                     SqlCon.Close();
                 }
-                return true;
+
+                return wsr;
             }
             catch (Exception ex)
-
             {
-
                 if (SqlCon.State == ConnectionState.Open)
                 {
                     SqlCon.Close();
-                    throw new Exception(ex.Message);
+                    wsr.Error = ex.Message;
+                    
                 }
                 else
                 {
-                    throw new Exception(ex.Message);
+                    wsr.Error = ex.Message;
                 }
-
+                return wsr;
             }
 
         }
         [WebMethod]
-        public bool verifyActivationEmail(string activationCode)
+        public WebServiceResponse VerifyActivationEmail(string activationCode)
         {
             try
             {
-
-                 using (SqlCommand cmd = new SqlCommand("SELECT ActivationCode FROM UserActivation WHERE ActivationCode = '" + activationCode + "' and Status='0' ", SqlCon))
+                wsr = new WebServiceResponse();
+                using (SqlCommand cmd = new SqlCommand("SELECT ActivationCode FROM UserLoginInfo WHERE ActivationCode = '" + activationCode + "' and Status='0' ", SqlCon))
                 {
                     SqlCon.Open();
                     Sqldr = cmd.ExecuteReader();
                     if (Sqldr.Read())
                     {
-                        Sqldr.Close();
-                        using (SqlCmd = new SqlCommand("UPDATE UserActivation SET Status='1' WHERE ActivationCode='" + activationCode + "'",SqlCon)) 
+                        Sqldr.Close();               
+                        using (SqlCmd = new SqlCommand("UPDATE UserLoginInfo SET Status='1' WHERE ActivationCode='" + activationCode + "'",SqlCon)) 
                         {
                             int rel = SqlCmd.ExecuteNonQuery();
                             if (rel == 1)
                             {
                                 SqlCon.Close();
-                                SqlCmd.Dispose();
-                                return true;
+                                wsr.Result = "1";
+                                
                             }
+                            else
+                            {
+                                SqlCon.Close();
+                                wsr.Result = "0";
+                            }
+
                            
                         }
-
                     }
-                    
-                    return false;
-                    
+                    else
+                    {
+                        Sqldr.Close();
+                        wsr.Result = "0";
+                    }
+                    return wsr;                   
                     
                 }
             }
@@ -116,12 +134,14 @@ namespace LotteryWebService
                 if (SqlCon.State == ConnectionState.Open)
                 {
                     SqlCon.Close();
-                    throw new Exception(ex.Message);
+                    wsr.Error = ex.Message;
+
                 }
                 else
                 {
-                    throw new Exception(ex.Message);
+                    wsr.Error = ex.Message;
                 }
+                return wsr;
             }
 
 
