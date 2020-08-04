@@ -61,12 +61,12 @@ namespace LotteryWebService
                     int res= SqlCmd.ExecuteNonQuery();
                     if(res==1)
                     {
-                        wsr.Result = "1";
+                        wsr.Status = "1";
 
                     }
                     else
                     {
-                        wsr.Result = "0";
+                        wsr.Status = "0";
                     }
                     SqlCon.Close();
                 }
@@ -108,13 +108,13 @@ namespace LotteryWebService
                             if (rel == 1)
                             {
                                 SqlCon.Close();
-                                wsr.Result = "1";
+                                wsr.Status = "1";
                                 
                             }
                             else
                             {
                                 SqlCon.Close();
-                                wsr.Result = "0";
+                                wsr.Status = "0";
                             }
 
                            
@@ -123,7 +123,7 @@ namespace LotteryWebService
                     else
                     {
                         Sqldr.Close();
-                        wsr.Result = "0";
+                        wsr.Status = "0";
                     }
                     return wsr;                   
                     

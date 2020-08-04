@@ -22,17 +22,140 @@ namespace LotteryWebService
     // [System.Web.Script.Services.ScriptService]
     public class DBService : System.Web.Services.WebService
     {
-       public SqlConnection SqlCon;
-       public SqlCommand SqlCmd;
-       public SqlDataReader Sqldr;
-        public SqlDataAdapter Sqlda;
+        private SqlConnection SqlCon;
+        private SqlCommand SqlCmd;
+        private SqlDataReader Sqldr;
+        private SqlDataAdapter Sqlda;
+
         WebServiceResponse wsr;
         UserInfo ui;
         TicketInfo ti;
+        AdminInfo ai;
+
+        DataSet Usersds;
+        DataSet Ticketsds;
+
+        DataTable Responsedt;
+        DataTable Usersdt;
+        DataTable Ticketsdt;
+
 
         public DBService()
         {
             SqlCon = new SqlConnection(ConfigurationManager.ConnectionStrings["LotteryDBCon"].ConnectionString);
+
+        }
+        [WebMethod]
+        public WebServiceResponse VerifyUserLogin(string UserId, string Password)
+        {
+
+            try
+            {
+                wsr = new WebServiceResponse();
+                using (SqlCmd = new SqlCommand("Select UserId From UserLoginInfo where Userid='" + UserId + "' and Password='" + Password + "' and Status=1 ", SqlCon))
+                {
+                    SqlCon.Open();
+                    var name = SqlCmd.ExecuteScalar();
+
+                    if (name != null)
+                    {
+                        wsr.Status = name.ToString();
+
+                    }                              
+
+                }
+                SqlCon.Close();
+                return wsr;
+
+            }
+            catch (Exception ex)
+            {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
+
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();                   
+
+                }                
+                return wsr;
+            }
+
+
+        }
+        [WebMethod]
+        public AdminInfo VerifyAdminLogin(string UserId, string Password)
+        {
+
+            try
+            {
+                ai = new AdminInfo();
+
+                using (SqlCmd = new SqlCommand("Select Name,Type From AdminLoginInfo where Userid='" + UserId + "' and Password='" + Password + "' ", SqlCon))
+                {
+                    SqlCon.Open();
+
+                    Sqldr = SqlCmd.ExecuteReader();
+                    if (Sqldr.Read())
+                    {
+                        ai.Name = Sqldr.GetString(0);
+                        ai.Type = Sqldr.GetString(1);
+                        ai.Status = "1";
+                        SqlCon.Close();
+                    }
+                }
+                SqlCon.Close();
+
+                return ai;
+
+            }
+            catch (Exception ex)
+            {
+                ai.Status = "0";
+                ai.Error = ex.Message;
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();                  
+
+                }
+               
+                return ai;
+            }
+
+        }
+        [WebMethod]
+        public WebServiceResponse IsExistingUser(string UserId)
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                using (SqlCmd = new SqlCommand("Select UserId From UserLoginInfo where UserId='" + UserId + "'  ", SqlCon))
+                {
+                    SqlCon.Open();
+                    var name = SqlCmd.ExecuteScalar();
+
+                    if (name != null)
+                    {
+                        wsr.Status = "1";
+
+                    }                    
+                }
+                SqlCon.Close();
+                return wsr;
+
+            }
+            catch (Exception ex)
+            {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();                  
+
+                }
+                
+                return wsr;
+            }
 
         }
         [WebMethod]
@@ -48,12 +171,12 @@ namespace LotteryWebService
                    
                     if (res==1)
                     {
-                        wsr.Result = "1";
+                        wsr.Status = "1";
                         
                     }
                     else
                     {
-                        wsr.Result = "0";
+                        wsr.Status = "0";
                     }                    
 
                 }
@@ -78,61 +201,41 @@ namespace LotteryWebService
             }           
 
         }
-        [WebMethod] 
-        public WebServiceResponse VerifyUserLogin(string UserId, string Password)
+        [WebMethod]
+        public WebServiceResponse InsertTractionInfo()
         {
-
             try
             {
                 wsr = new WebServiceResponse();
-                using (SqlCmd = new SqlCommand("Select UserId From UserLoginInfo where Userid='" + UserId + "' and Password='" + Password + "' and Status=1 ", SqlCon))
-                {               
-                     SqlCon.Open();
-                    var name = SqlCmd.ExecuteScalar();
+                //using (SqlCmd = new SqlCommand("insert into UserInfo values('" + FirstName + "','" + LastName + "','" + PhoneNumber + "','" + Email + "','" + Password + "','" + DOB + "','" + Country + "','" + IdType + "','" + IdNo + "','" + Address + "','" + State + "','" + City + "','" + Code + "')", SqlCon))
+                //{
+                //    SqlCon.Open();
+                //    int res = SqlCmd.ExecuteNonQuery();
 
-                    if (name != null)
-                    {
-                        wsr.Result = name.ToString();
-                        
-                    }
-                    // Sqldr = SqlCmd.ExecuteReader();
-                    //if (Sqldr.Read())
-                    //{
+                //    if (res == 1)
+                //    {
+                //        wsr.Status = "1";
 
+                //    }
+                //   
 
-                    //        wsr.Result= Sqldr.GetValue(0).ToString();
-                    //        SqlCon.Close();
-
-                    //    }
-                    else
-                    {
-                      
-                        wsr.Result = "0";
-                  
-
-                    }
-                }
+                //}
                 SqlCon.Close();
                 return wsr;
 
             }
             catch (Exception ex)
             {
-
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
                     SqlCon.Close();
                     wsr.Error = ex.Message;
-                   
-                }
-                else
-                {
-                    wsr.Error = ex.Message;
 
-                }
+                }                
                 return wsr;
             }
-            
 
         }
         [WebMethod]
@@ -148,12 +251,8 @@ namespace LotteryWebService
                     if (res == 1)
                     {
                        
-                        wsr.Result = "1";
-                    }
-                    else
-                    {
-                        wsr.Result = "0";
-                    }
+                        wsr.Status = "1";
+                    }                    
                    
                 }
                 SqlCon.Close();
@@ -162,21 +261,54 @@ namespace LotteryWebService
             }
             catch(Exception ex)
             {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
-                    SqlCon.Close();
-                    wsr.Error = ex.Message;
+                    SqlCon.Close();                   
 
-                }
-                else
-                {
-                    wsr.Error = ex.Message;
-
-                }
+                }                
 
                 return wsr;
             }
             
+
+        }
+        [WebMethod]
+        public WebServiceResponse UpdateTicketInfo(string TicketNo, string Status)
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                using (SqlCmd = new SqlCommand("UPDATE TicketInfo SET Status='" + Status + "' WHERE TicketNo='" + TicketNo + "' ", SqlCon))
+                {
+                    SqlCon.Open();
+                    int res = SqlCmd.ExecuteNonQuery();
+                    if (res == 1)
+                    {
+
+                        wsr.Status = "1";
+                    }
+
+                }
+                SqlCon.Close();
+                return wsr;
+
+            }
+            catch (Exception ex)
+            {
+                 wsr.Status="0";
+                 wsr.Error = ex.Message;
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    
+
+                }               
+
+                return wsr;
+            }
+
 
         }
         [WebMethod]
@@ -197,12 +329,7 @@ namespace LotteryWebService
                         ti.PriceAmount = Sqldr.GetInt32(3); 
                         ti.CloseDate = Sqldr.GetDateTime(4);
                         ti.Status = 1;
-
-                    }
-                    else
-                    {
-                        ti.Status = 0;
-                    }
+                    }                   
                     SqlCon.Close();
                     return ti;
                 }
@@ -210,62 +337,49 @@ namespace LotteryWebService
             }
             catch(Exception ex)
             {
+                ti.Status = 0;
+                ti.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
-                    SqlCon.Close();
-                    ti.Error = ex.Message;
+                    SqlCon.Close();                   
 
-                }
-                else
-                {
-                    ti.Error = ex.Message;
-
-                }
+                }             
 
                 return ti;
             }
             
         }
+
         [WebMethod]
-        public WebServiceResponse IsExistingUser(string UserId)
+        public WebServiceResponse GetUserCount()
         {
             try
             {
                 wsr = new WebServiceResponse();
-                using (SqlCmd = new SqlCommand("Select UserId From UserLoginInfo where UserId='"+UserId+"'  ", SqlCon))
+                SqlCon.Open();
+                using (SqlCmd = new SqlCommand("SELECT COUNT(*) AS UserCount FROM UserInfo ", SqlCon))
                 {
-                    SqlCon.Open();
-                    var name = SqlCmd.ExecuteScalar();
+                    string Count = SqlCmd.ExecuteScalar().ToString();
 
-                    if (name != null)
+                    if (Count!="")
                     {
-                        wsr.Result = name.ToString();
-
+                        wsr.Status = Count;                        
                     }
-                    else
-                    {
-                        wsr.Result = "0";
-                        
-                    }
+                    SqlCon.Close();
+                    return wsr;
                 }
-                SqlCon.Close();
-                return wsr;
 
             }
             catch (Exception ex)
             {
-
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
                     SqlCon.Close();
-                    wsr.Error = ex.Message;
 
                 }
-                else
-                {
-                    wsr.Error = ex.Message;
 
-                }
                 return wsr;
             }
 
@@ -321,26 +435,20 @@ namespace LotteryWebService
                 }
                 return ui;
             }
-        }
+        }     
         [WebMethod]
         public DataSet GetUsersInfo()
         {
-            DataSet Usersds = new DataSet();
-            //DataTable Response = new DataTable("Response");
-            //Response.Columns.Add(new DataColumn("Result", typeof(string)));
-            //Response.Columns.Add(new DataColumn("Error", typeof(string)));
-            //DataRow dr = Response.NewRow();            
-
-            //Usersds.Tables["Respone"].Columns.Add("Result", typeof(string));
+              
 
             try
             {
                 Usersds = new DataSet();
-                DataTable UsersInfo = Usersds.Tables.Add("UsersInfo");
-                DataTable Response = Usersds.Tables.Add("Response");
-
-
+                Usersdt = Usersds.Tables.Add("UsersInfo");
+                Responsedt = Usersds.Tables.Add("Response");
                 Usersds.Tables["Response"].Columns.Add("Status", typeof(string));
+                Usersds.Tables["Response"].Columns.Add("Error", typeof(string));
+
                 using (SqlCmd = new SqlCommand("SELECT *FROM UserInfo", SqlCon))
                 {
                     using (Sqlda = new SqlDataAdapter(SqlCmd))
@@ -348,33 +456,75 @@ namespace LotteryWebService
                         Sqlda.Fill(Usersds,"UsersInfo");
                         if (Usersds.Tables["UsersInfo"].Rows.Count>0)
                         {
-                            Usersds.Tables["Response"].Rows.Add("1");
-                            return Usersds;
-                        }
-                        else
-                        {                          
-                            Usersds.Tables["Response"].Rows.Add("0");                          
+                            Usersds.Tables["Response"].Rows.Add("1","");
+                           
                         }
                         SqlCon.Close();
+                        return Usersds;
+                        
                     }                       
-                    return Usersds;
+                   
                 }
             }
             catch (Exception ex)
-            {
-                Usersds.Tables["Response"].Columns.Add("Error", typeof(string));
+            {                
+               
                 if (SqlCon.State == ConnectionState.Open)
                 {
                     SqlCon.Close();                  
-                    Usersds.Tables["Respone"].Rows.Add(ex.Message);
+                    Usersds.Tables["Respone"].Rows.Add("0",ex.Message);
                 }
                 else
                 {
-                    Usersds.Tables["Respone"].Rows.Add(ex.Message);
+                    Usersds.Tables["Respone"].Rows.Add("0",ex.Message);
                 }
                 return Usersds;
             }
         }
+        [WebMethod]
+        public DataSet GetTicketsInfo()
+        {           
+
+            try
+            {
+                Ticketsds = new DataSet();
+                Ticketsdt = Ticketsds.Tables.Add("TicketsInfo");
+                Responsedt = Ticketsds.Tables.Add("Response");
+                Ticketsds.Tables["Response"].Columns.Add("Status", typeof(string));
+                Ticketsds.Tables["Response"].Columns.Add("Error", typeof(string));
+                using (SqlCmd = new SqlCommand("SELECT TicketNo,TicketPrice,PriceAmount,DisplayDate,CloseDate,DrawDate,Status FROM TicketInfo", SqlCon))
+                {
+                    using (Sqlda = new SqlDataAdapter(SqlCmd))
+                    {
+                        Sqlda.Fill(Ticketsds, "TicketsInfo");
+                        if (Ticketsds.Tables["TicketsInfo"].Rows.Count > 0)
+                        {
+                            Ticketsds.Tables["Response"].Rows.Add("1","");
+                           
+                        }
+                        SqlCon.Close();
+                        return Ticketsds;
+                    }
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                
+                
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    Ticketsds.Tables["Respone"].Rows.Add("0",ex.Message);
+                }
+                else
+                {
+                    Ticketsds.Tables["Respone"].Rows.Add("0",ex.Message);
+                }
+                return Ticketsds;
+            }
+        }
+        [WebMethod]
         public DataSet GetTransactionsInfo()
         {
             DataSet Transactionds = new DataSet();            
@@ -421,8 +571,8 @@ namespace LotteryWebService
                 return Transactionds;
             }
         }
-
-        public DataSet GetTransactionsInfo(string UserId)
+        [WebMethod]
+        public DataSet GetTransactionInfo(string UserId)
         {
             DataSet Transactionds = new DataSet();
 
@@ -468,5 +618,100 @@ namespace LotteryWebService
                 return Transactionds;
             }
         }
+        [WebMethod]
+        public DataSet GetResultInfo()
+        {
+            DataSet Transactionds = new DataSet();
+
+            try
+            {
+                Transactionds = new DataSet();
+                DataTable TransactionInfo = Transactionds.Tables.Add("TransactionInfo");
+                DataTable Response = Transactionds.Tables.Add("Response");
+
+
+                Transactionds.Tables["Response"].Columns.Add("Status", typeof(string));
+                using (SqlCmd = new SqlCommand("SELECT *FROM UserInfo", SqlCon))
+                {
+                    using (Sqlda = new SqlDataAdapter(SqlCmd))
+                    {
+                        Sqlda.Fill(Transactionds, "TransactionInfo");
+                        if (Transactionds.Tables["TransactionInfo"].Rows.Count > 0)
+                        {
+                            Transactionds.Tables["Response"].Rows.Add("1");
+                            return Transactionds;
+                        }
+                        else
+                        {
+                            Transactionds.Tables["Response"].Rows.Add("0");
+                        }
+                        SqlCon.Close();
+                    }
+                    return Transactionds;
+                }
+            }
+            catch (Exception ex)
+            {
+                Transactionds.Tables["Response"].Columns.Add("Error", typeof(string));
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    Transactionds.Tables["Respone"].Rows.Add(ex.Message);
+                }
+                else
+                {
+                    Transactionds.Tables["Respone"].Rows.Add(ex.Message);
+                }
+                return Transactionds;
+            }
+        }
+        [WebMethod]
+        public DataSet GetResultsInfo(string UserId)
+        {
+            DataSet Transactionds = new DataSet();
+
+            try
+            {
+                Transactionds = new DataSet();
+                DataTable TransactionInfo = Transactionds.Tables.Add("TransactionInfo");
+                DataTable Response = Transactionds.Tables.Add("Response");
+
+
+                Transactionds.Tables["Response"].Columns.Add("Status", typeof(string));
+                using (SqlCmd = new SqlCommand("SELECT *FROM UserInfo", SqlCon))
+                {
+                    using (Sqlda = new SqlDataAdapter(SqlCmd))
+                    {
+                        Sqlda.Fill(Transactionds, "TransactionInfo");
+                        if (Transactionds.Tables["TransactionInfo"].Rows.Count > 0)
+                        {
+                            Transactionds.Tables["Response"].Rows.Add("1");
+                            return Transactionds;
+                        }
+                        else
+                        {
+                            Transactionds.Tables["Response"].Rows.Add("0");
+                        }
+                        SqlCon.Close();
+                    }
+                    return Transactionds;
+                }
+            }
+            catch (Exception ex)
+            {
+                Transactionds.Tables["Response"].Columns.Add("Error", typeof(string));
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    Transactionds.Tables["Respone"].Rows.Add(ex.Message);
+                }
+                else
+                {
+                    Transactionds.Tables["Respone"].Rows.Add(ex.Message);
+                }
+                return Transactionds;
+            }
+        }
+
     }
 }

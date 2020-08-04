@@ -5,10 +5,11 @@ using System.Web;
 
 namespace LotteryWebService
 {
-    public class WebServiceResponse
+    public class AdminInfo
     {
+        public string Name { get; set; }
+        public string Type { get; set; }
         public string Status { get; set; }
         public string Error { get; set; }
-
     }
 }
