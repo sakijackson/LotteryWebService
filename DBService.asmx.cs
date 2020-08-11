@@ -19,7 +19,7 @@ namespace LotteryWebService
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
-    // [System.Web.Script.Services.ScriptService]
+     [System.Web.Script.Services.ScriptService]
     public class DBService : System.Web.Services.WebService
     {
         private SqlConnection SqlCon;
@@ -32,18 +32,53 @@ namespace LotteryWebService
         TicketInfo ti;
         AdminInfo ai;
 
-        DataSet Usersds;
-        DataSet Ticketsds;
+        private  DataSet Usersds;
+        private  DataSet Ticketsds;
 
-        DataTable Responsedt;
-        DataTable Usersdt;
-        DataTable Ticketsdt;
+        private DataTable Responsedt;
+        private DataTable Usersdt;
+        private DataTable Ticketsdt;
 
 
         public DBService()
         {
             SqlCon = new SqlConnection(ConfigurationManager.ConnectionStrings["LotteryDBCon"].ConnectionString);
 
+        }
+        [WebMethod]
+        public string  login(string UserId,string Password)
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                using (SqlCmd = new SqlCommand("Select UserId From UserLoginInfo where Userid='" + UserId + "' and Password='" + Password + "' and Status=1 ", SqlCon))
+                {
+                    SqlCon.Open();
+                    var name = SqlCmd.ExecuteScalar();
+
+                    if (name != null)
+                    {
+                        wsr.Status = name.ToString();
+
+                    }
+
+                }
+                SqlCon.Close();
+                return "true";
+
+            }
+            catch (Exception ex)
+            {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
+
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+
+                }
+                return "false" ;
+            }
         }
         [WebMethod]
         public WebServiceResponse VerifyUserLogin(string UserId, string Password)
@@ -174,29 +209,22 @@ namespace LotteryWebService
                         wsr.Status = "1";
                         
                     }
-                    else
-                    {
-                        wsr.Status = "0";
-                    }                    
-
+                    SqlCon.Close();
+                    return wsr;
                 }
-                SqlCon.Close();
-                return wsr;
+               
 
             }
             catch (Exception ex)     
             {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
-                    SqlCon.Close();
-                    wsr.Error = ex.Message;
+                    SqlCon.Close();                  
 
                 }
-                else
-                {
-                    wsr.Error = ex.Message;
-
-                }
+               
                 return wsr;
             }           
 
@@ -272,6 +300,41 @@ namespace LotteryWebService
                 return wsr;
             }
             
+
+        }
+        [WebMethod]
+        public WebServiceResponse InsertStoreInfo(string Store, string Address,string Timing)
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                using (SqlCmd = new SqlCommand("insert into StoreInfo values('" + Store + "','" + Address + "','" + Timing + "')", SqlCon))
+                {
+                    SqlCon.Open();
+                    int res = SqlCmd.ExecuteNonQuery();
+                    if (res == 1)
+                    {
+                        wsr.Status = "1";
+                    }
+
+                }
+                SqlCon.Close();
+                return wsr;
+
+            }
+            catch (Exception ex)
+            {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+
+                }
+
+                return wsr;
+            }
+
 
         }
         [WebMethod]
@@ -384,6 +447,41 @@ namespace LotteryWebService
             }
 
         }
+
+        [WebMethod]
+        public WebServiceResponse GetTicketCount()
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                SqlCon.Open();
+                using (SqlCmd = new SqlCommand("SELECT COUNT(*) AS TicketCount FROM TicketInfo ", SqlCon))
+                {
+                    string Count = SqlCmd.ExecuteScalar().ToString();
+
+                    if (Count != "")
+                    {
+                        wsr.Status = Count;
+                    }
+                    SqlCon.Close();
+                    return wsr;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                wsr.Status = "0";
+                wsr.Error = ex.Message;
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+
+                }
+
+                return wsr;
+            }
+
+        }
         [WebMethod]
         public UserInfo GetUserInfo(string EmailId)
         {
@@ -412,27 +510,21 @@ namespace LotteryWebService
                         ui.Code = Sqldr.GetValue(12).ToString();
                         ui.Status = 1;
                     }
-                    else
-                    {
-                        ui.Status = 0;
-                    }
+                    
                     SqlCon.Close();
                     return ui;
                 }
             }
             catch (Exception ex)
             {
+                ui.Status = 0;
+                ui.Error = ex.Message;
                 if (SqlCon.State == ConnectionState.Open)
                 {
-                    SqlCon.Close();
-                    ui.Error = ex.Message;
+                    SqlCon.Close();                   
 
                 }
-                else
-                {
-                    ui.Error = ex.Message;
-
-                }
+                
                 return ui;
             }
         }     
