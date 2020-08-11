@@ -34,10 +34,12 @@ namespace LotteryWebService
 
         private  DataSet Usersds;
         private  DataSet Ticketsds;
+        private DataSet Storeds;
 
         private DataTable Responsedt;
         private DataTable Usersdt;
         private DataTable Ticketsdt;
+        private DataTable Storedt;
 
 
         public DBService()
@@ -613,6 +615,43 @@ namespace LotteryWebService
                 {
                     Ticketsds.Tables["Respone"].Rows.Add("0",ex.Message);
                 }
+                return Ticketsds;
+            }
+        }
+        [WebMethod]
+        public DataSet GetStoreInfo()
+        {
+
+            try
+            {
+                Storeds = new DataSet();
+                Storedt = Storeds.Tables.Add("StoreInfo");
+                Responsedt = Storeds.Tables.Add("Response");
+                Storeds.Tables["Response"].Columns.Add("Status", typeof(string));
+                Storeds.Tables["Response"].Columns.Add("Error", typeof(string));
+                using (SqlCmd = new SqlCommand("SELECT Store,Address,Timing FROM StoreInfo", SqlCon))
+                {
+                    using (Sqlda = new SqlDataAdapter(SqlCmd))
+                    {
+                        Sqlda.Fill(Storeds, "StoreInfo");
+                        if (Storeds.Tables["StoreInfo"].Rows.Count > 0)
+                        {
+                            Storeds.Tables["Response"].Rows.Add("1", "");
+                        }
+                        SqlCon.Close();
+                        return Storeds;
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Storeds.Tables["Respone"].Rows.Add("0", ex.Message);
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                   
+                }                
                 return Ticketsds;
             }
         }
