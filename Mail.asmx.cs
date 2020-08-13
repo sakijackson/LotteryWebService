@@ -89,6 +89,69 @@ namespace LotteryWebService
             }
 
         }
+
+        [WebMethod]
+        public WebServiceResponse SendForgetEmail(string EmailId,string url, DateTime dt)
+        {
+            try
+            {
+                wsr = new WebServiceResponse();
+                string PasswordResetCode = Guid.NewGuid().ToString();
+                using (MailMessage mm = new MailMessage("sakigokul97@gmail.com", EmailId))
+                {
+                    string body;
+                    string newurl = url.Replace("Rest.aspx", "Reset.aspx?ResetCode=" + PasswordResetCode);
+                    mm.Subject = "Password Reset";
+                   // string body = "Hello " + Name + ",";
+                    body = "<br /><br />Please click the following link to Reset your account Password";
+                    body += "<br /><a href = '" + newurl + "'>Click here to activate your account.</a>";
+                    body += "<br /><br />Thanks";
+                    mm.Body = body;
+                    mm.IsBodyHtml = true;
+                    SmtpClient smtp = new SmtpClient();
+                    smtp.Host = "smtp.gmail.com";
+                    smtp.EnableSsl = true;
+                    NetworkCredential NetworkCred = new NetworkCredential("sakigokul97@gmail.com", "(Sakilove2ani)");
+                    smtp.UseDefaultCredentials = true;
+                    smtp.Credentials = NetworkCred;
+                    smtp.Port = 587;
+                    smtp.Send(mm);
+                }
+
+                using (SqlCmd = new SqlCommand("INSERT INTO ForgetPassword VALUES('" + PasswordResetCode + "','" + EmailId + "','" + dt + "')", SqlCon))
+                {
+                    SqlCon.Open();
+                    int res = SqlCmd.ExecuteNonQuery();
+                    if (res == 1)
+                    {
+                        wsr.Status = "1";
+
+                    }
+                    else
+                    {
+                        wsr.Status = "0";
+                    }
+                    SqlCon.Close();
+                }
+
+                return wsr;
+            }
+            catch (Exception ex)
+            {
+                if (SqlCon.State == ConnectionState.Open)
+                {
+                    SqlCon.Close();
+                    wsr.Error = ex.Message;
+
+                }
+                else
+                {
+                    wsr.Error = ex.Message;
+                }
+                return wsr;
+            }
+
+        }
         [WebMethod]
         public WebServiceResponse VerifyActivationEmail(string activationCode)
         {
